@@ -1,0 +1,31 @@
+diff --git a/resources/sass/components/fieldtypes/bard.scss b/resources/sass/components/fieldtypes/bard.scss
+index 96a637e46..ef988455e 100644
+--- a/resources/sass/components/fieldtypes/bard.scss
++++ b/resources/sass/components/fieldtypes/bard.scss
+@@ -82,7 +82,9 @@
+ }
+ 
+ .bard-fieldtype .bard-fieldtype .bard-fixed-toolbar {
++    top: 0;
+     position: relative;
++    z-index: 1;
+ }
+ 
+ .bard-floating-toolbar {
+@@ -455,16 +457,6 @@
+     }
+ }
+ 
+-
+-/* Bard inside a set
+-  ========================================================================== */
+-
+-.replicator-set-body .bard-fixed-toolbar {
+-    top: 0;
+-    position: relative;
+-    z-index: 1;
+-}
+-
+ /* Bard inside the live preview
+   ========================================================================== */
+ 
