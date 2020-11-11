@@ -156,6 +156,7 @@ class Replicator extends Fieldtype
                     return null;
                 })->all();
             })->all(),
+            '__collaboration' => ['existing'],
         ];
     }
 }
