@@ -226,12 +226,33 @@ export default {
             const scrollX = $(iframe.contentWindow.document).scrollLeft();
             const scrollY = $(iframe.contentWindow.document).scrollTop();
 
-            contents += '<script type="text/javascript">window.scrollTo('+scrollX+', '+scrollY+');\x3c/script>';
+            // the statamicResetPreview() patch is needed for our frontend scripts
+            // until https://github.com/statamic/ideas/issues/382 is part of core
+            contents +=
+                '<script type="text/javascript">window.statamicResetPreview = function(){window.location="' +
+                cp_url('livepreview/loading-screen') +
+                '";};window.scrollTo(' +
+                scrollX + 
+                ', ' +
+                scrollY +
+                ');\x3c/script>';
 
-            iframe.contentWindow.document.open();
-            iframe.contentWindow.document.write(contents);
-            iframe.contentWindow.document.close();
-            this.loading = false;
+            const handleIframeReady = () => {
+                iframe.contentWindow.document.open();
+                iframe.contentWindow.document.write(contents);
+                iframe.contentWindow.document.close();
+                this.loading = false;
+            };
+
+            if (
+                iframe.contentWindow.statamicResetPreview
+                && typeof iframe.contentWindow.statamicResetPreview === 'function'
+            ) {
+                iframe.contentWindow.statamicResetPreview();
+                iframe.addEventListener('load', handleIframeReady, { once: true });
+            } else {
+                handleIframeReady();
+            }
         },
 
         close() {
