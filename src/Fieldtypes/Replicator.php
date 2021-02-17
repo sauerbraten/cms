@@ -2,9 +2,14 @@
 
 namespace Statamic\Fieldtypes;
 
+use Statamic\Facades\GraphQL;
 use Statamic\Fields\Fields;
 use Statamic\Fields\Fieldtype;
+use Statamic\GraphQL\Types\ReplicatorSetsType;
+use Statamic\GraphQL\Types\ReplicatorSetType;
 use Statamic\Query\Scopes\Filters\Fields\Replicator as ReplicatorFilter;
+use Statamic\Support\Arr;
+use Statamic\Support\Str;
 
 class Replicator extends Fieldtype
 {
@@ -56,7 +61,9 @@ class Replicator extends Fieldtype
 
         $fields = $this->fields($row['type'])->addValues($row)->process()->values()->all();
 
-        return array_merge($row, $fields);
+        $row = array_merge($row, $fields);
+
+        return Arr::removeNullValues($row);
     }
 
     public function preProcess($data)
@@ -78,7 +85,11 @@ class Replicator extends Fieldtype
 
     public function fields($set)
     {
-        return new Fields($this->config("sets.$set.fields"), $this->field()->parent());
+        return new Fields(
+            $this->config("sets.$set.fields"),
+            $this->field()->parent(),
+            $this->field()
+        );
     }
 
     public function extraRules(): array
@@ -158,5 +169,49 @@ class Replicator extends Fieldtype
             })->all(),
             '__collaboration' => ['existing'],
         ];
+    }
+
+    public function toGqlType()
+    {
+        return GraphQL::listOf(GraphQL::type($this->gqlSetsTypeName()));
+    }
+
+    public function addGqlTypes()
+    {
+        $types = collect($this->config('sets'))
+            ->each(function ($set, $handle) {
+                $this->fields($handle)->all()->each(function ($field) {
+                    $field->fieldtype()->addGqlTypes();
+                });
+            })
+            ->map(function ($config, $handle) {
+                $type = new ReplicatorSetType($this, $this->gqlSetTypeName($handle), $handle);
+
+                return [
+                    'handle' => $handle,
+                    'name' => $type->name,
+                    'type' => $type,
+                ];
+            })->values();
+
+        GraphQL::addTypes($types->pluck('type', 'name')->all());
+
+        $union = new ReplicatorSetsType($this, $this->gqlSetsTypeName(), $types);
+
+        GraphQL::addType($union);
+    }
+
+    protected function gqlSetTypeName($set)
+    {
+        return 'Set_'.collect($this->field->handlePath())->map(function ($part) {
+            return Str::studly($part);
+        })->join('_').'_'.Str::studly($set);
+    }
+
+    protected function gqlSetsTypeName()
+    {
+        return 'Sets_'.collect($this->field->handlePath())->map(function ($part) {
+            return Str::studly($part);
+        })->join('_');
     }
 }
