@@ -223,6 +223,8 @@ export default {
             extensions: this.getExtensions(),
             content: this.valueToContent(clone(this.value)),
             editable: !this.readOnly,
+            disableInputRules: ['italic'],
+            disablePasteRules: ['italic'],
             onFocus: () => this.$emit('focus'),
             onBlur: () => {
                 // Since clicking into a field inside a set would also trigger a blur, we can't just emit the
